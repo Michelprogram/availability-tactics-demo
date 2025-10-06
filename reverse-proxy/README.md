@@ -18,10 +18,9 @@ This project is a simple reverse proxy written in Go, supporting health checks a
 - Go 1.22+
 - (Optional) Docker
 
-#### Clone and Build
+#### Build
 
 ```sh
-cd availability-tactics-demo/reverse-proxy
 go build -o reverse-proxy ./cmd/main.go
 ```
 
