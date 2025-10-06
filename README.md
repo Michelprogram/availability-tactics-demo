@@ -11,17 +11,17 @@
 - [ ] Dockerfile
 
 ## Reverse Proxy (Failover Manager)
-- [ ] Initialize reverse-proxy (Node.js/Express, Python/Flask, or Java/SpringBoot)
-- [ ] Implement proxy endpoints:
-  - [ ] `GET /proxy/health` → check active service
-  - [ ] `GET /proxy/data` → forward request to active service
-  - [ ] `POST /proxy/fail` → forward fail trigger to primary
-  - [ ] `POST /proxy/recover` → forward recover trigger to primary
-- [ ] Background job:
-  - [ ] Monitor `/health` of primary → auto-switch to backup if down (`setInterval`)
+- [x] Initialize reverse-proxy (Node.js/Express, Python/Flask, or Java/SpringBoot)
+- [x] Implement proxy endpoints:
+  - [x] `GET /proxy/health` → check active service
+  - [x] `GET /proxy/data` → forward request to active service
+  - [x] `POST /proxy/fail` → forward fail trigger to primary
+  - [x] `POST /proxy/recover` → forward recover trigger to primary
+- [x] Background job:
+  - [x] Monitor `/health` of primary → auto-switch to backup if down (`setInterval`)
   - [ ] Log downtime + recovery events
   - [ ] Optionally collect metrics (failover time + error rate)
-- [ ] Dockerfile
+- [x] Dockerfile
 
 ## Front-End (Monitoring UI)
 - [ ] Initialize front-end (any stack: React, Vue, or simple HTML/JS)

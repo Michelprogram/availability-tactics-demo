@@ -1,1 +1,9 @@
-#TODO
+services:
+  reverse-proxy:
+    build:
+      context: ./reverse-proxy
+    ports:
+      - "8021:8021"
+    volumes:
+      - ./reverse-proxy/config.yaml:/app/config.yaml
+    restart: unless-stopped
