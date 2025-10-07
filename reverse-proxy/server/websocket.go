@@ -31,12 +31,22 @@ func (s *socketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 
-	for msg := range s.logger {
-		err := c.WriteMessage(websocket.TextMessage, []byte(msg))
-		if err != nil {
-			log.Printf("Error %s when sending message to client", err)
-			return
+	done := make(chan struct{})
+
+	go func() {
+		for msg := range s.logger {
+			err := c.WriteMessage(websocket.TextMessage, []byte(msg))
+			if err != nil {
+				log.Printf("Error %s when sending message to client", err)
+				break
+			}
 		}
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-r.Context().Done():
 	}
 
 }
