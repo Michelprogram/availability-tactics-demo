@@ -79,3 +79,18 @@ curl http://localhost:8021/data/
 ```
 
 The proxy will forward requests to a healthy backend and automatically fail over if one goes down.
+
+## 5. WebSocket Support
+
+The reverse proxy also supports WebSocket connections. Any incoming WebSocket request will be proxied to the active backend target transparently.
+
+### Example
+
+```javascript
+
+const socket = new WebSocket('ws://localhost:8021/log');
+
+socket.addEventListener("message", function (event) {
+  console.log("Message reçu du serveur ", event.data);
+});
+```

@@ -18,7 +18,7 @@
   - [x] `POST /proxy/fail` → forward fail trigger to primary
   - [x] `POST /proxy/recover` → forward recover trigger to primary
 - [x] Background job:
-  - [x] Monitor `/health` of primary → auto-switch to backup if down (`setInterval`)
+    - [x] Monitor `/health` of primary → auto-switch to backup if down (`setInterval`)
   - [ ] Log downtime + recovery events
   - [ ] Optionally collect metrics (failover time + error rate)
 - [x] Dockerfile

@@ -26,9 +26,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Reverse proxy up and running :%s\nWith targets: %v", port, srv.Targets)
-	http.Handle("/", srv.Handler())
-	err = http.ListenAndServe(":"+port, nil)
+	log.Printf("Reverse proxy up and running :%s\nWith targets: %v", port, conf.Targets)
+
+	err = http.ListenAndServe(":"+port, srv)
 
 	if err != nil {
 		log.Fatal(err)
