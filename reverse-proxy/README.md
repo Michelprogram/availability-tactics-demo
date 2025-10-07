@@ -57,16 +57,6 @@ Edit `config.yaml` to set your backend targets, health check interval, and route
 ```yaml
 targets: [http://localhost:8022, http://localhost:8023]
 interval: 2
-
-routes:
-  - path: /health/
-    methods: [GET]
-  - path: /data/
-    methods: [GET]
-  - path: /fail/
-    methods: [POST]
-  - path: /recover/
-    methods: [POST]
 ```
 
 ### 4. Test the Proxy

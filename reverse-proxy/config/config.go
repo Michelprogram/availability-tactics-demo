@@ -6,13 +6,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Route struct {
-	Path    string   `yaml:"path"`
-	Methods []string `yaml:"methods"`
-}
-
 type Config struct {
-	Routes   []Route  `yaml:"routes"`
 	Targets  []string `yaml:"targets"`
 	Interval int      `yaml:"interval"`
 }
