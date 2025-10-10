@@ -52,7 +52,7 @@
   - [ ] Failover time (`T_bascule`)
   - [ ] Error rate during failover (`E_bascule`)
 
-  ## 🚀 Getting Started with Docker Compose
+## Getting Started with Docker Compose
 
   To start the entire project stack using Docker Compose:
 
@@ -72,3 +72,7 @@
   ```
 
   > **Tip:** Use `docker compose logs -f` to view real-time logs from all services.
+
+## Architecture
+
+![img](documentation/architecture.png)
