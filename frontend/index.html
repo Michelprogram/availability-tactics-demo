@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Disponibilité – Tableau de bord</title>
+  <meta name="color-scheme" content="light">
+  <link rel="stylesheet" href="body.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-text">Disponibilité – Dashboard</span>
+    </div>
+    <div class="env" id="envBadge">INIT…</div>
+  </header>
+
+  <main class="container">
+    <!-- Statuts -->
+    <section class="grid">
+      <article class="card">
+        <h2>Service actif</h2>
+        <div class="active-line">
+          <span id="activeBadge" class="badge neutral">—</span>
+          <span id="activeUrl" class="muted small"></span>
+        </div>
+        <p class="muted small">Déterminé via <code>/health</code> et logs.</p>
+      </article>
+
+      <article class="card">
+        <h2>Primaire</h2>
+        <div class="kpis">
+          <div><div class="label">État</div><div id="priState" class="badge neutral">—</div></div>
+          <div><div class="label">Code</div><div id="priCode" class="kval">—</div></div>
+          <div><div class="label">Latence</div><div id="priLat" class="kval">—</div></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Sauvegarde</h2>
+        <div class="kpis">
+          <div><div class="label">État</div><div id="bakState" class="badge neutral">—</div></div>
+          <div><div class="label">Code</div><div id="bakCode" class="kval">—</div></div>
+          <div><div class="label">Latence</div><div id="bakLat" class="kval">—</div></div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Actions -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Actions</h2>
+        <div class="muted small">Sonde santé&nbsp;:<span id="pollInfo">—</span></div>
+      </div>
+      <div class="actions">
+        <div class="row">
+          <button id="btnData" class="btn primary">Envoyer une requête</button>
+          <button id="btnFail" class="btn warn">Simuler panne (actif)</button>
+          <button id="btnRecover" class="btn success">Récupérer (actif)</button>
+        </div>
+        <div class="row">
+          <button id="btnAuto" class="btn">Auto-ping&nbsp;: OFF</button>
+          <label class="range">
+            Débit <input id="rate" type="range" min="1" max="10" value="3" />
+            <output id="rateOut">3 req/s</output>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Logs -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Journaux</h2>
+        <div class="legend">
+          <span class="dot ok"></span>200
+          <span class="dot warn"></span>3xx/4xx
+          <span class="dot err"></span>5xx/erreur
+        </div>
+      </div>
+      <div class="logs-toolbar">
+        <div class="muted small" id="counters">—</div>
+        <div class="muted small">WebSocket&nbsp;: <span id="wsState">—</span></div>
+        <button id="btnClear" class="btn ghost small">Effacer</button>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+          <tr>
+            <th>Heure</th><th>Action</th><th>Code</th><th>Servi par</th><th>Latence</th><th>Détails</th>
+          </tr>
+          </thead>
+          <tbody id="logs"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span class="muted small">© POC Disponibilité – MGL7361</span>
+    <span id="backendHint" class="muted small"></span>
+  </footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="javascript.js"></script>
+</body>
+</html>
