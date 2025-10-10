@@ -1,0 +1,2 @@
+targets: [http://localhost:8022, http://localhost:8023]
+interval: 2
