@@ -51,3 +51,24 @@
 - [ ] Collect metrics:
   - [ ] Failover time (`T_bascule`)
   - [ ] Error rate during failover (`E_bascule`)
+
+  ## 🚀 Getting Started with Docker Compose
+
+  To start the entire project stack using Docker Compose:
+
+  ```bash
+  docker compose up --build
+  ```
+
+  This command will:
+  - Build all service images (backend, reverse proxy, and frontend if available)
+  - Start the containers as defined in `docker-compose.yml`
+  - Automatically restart services if they fail (per healthcheck and restart policies)
+
+  To stop and remove containers, networks, and volumes:
+
+  ```bash
+  docker compose down
+  ```
+
+  > **Tip:** Use `docker compose logs -f` to view real-time logs from all services.
