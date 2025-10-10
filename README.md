@@ -35,7 +35,7 @@
 ## Deployment
 - [x] Docker Compose:
   - [x] 2 backends (primary + backup)  avec `healthcheck`
-  - [ ] 1 reverse proxy
+  - [x] 1 reverse proxy
   - [ ] 1 frontend
 
 ## Deliverables
@@ -51,21 +51,3 @@
 - [ ] Collect metrics:
   - [ ] Failover time (`T_bascule`)
   - [ ] Error rate during failover (`E_bascule`)
-
-### Run & test (backend)
-```bash
-# Sans Docker
-cd backend
-npm install
-npm run dev:primary   # http://localhost:3001
-npm run dev:spare     # http://localhost:3002
-
-# Avec Docker Compose
-docker compose up --build
-# Primary: http://localhost:3001  | Spare: http://localhost:3002
-
-# Tests
-curl http://localhost:3001/health
-curl http://localhost:3002/health
-curl http://localhost:3001/api/data
-curl -X POST http://localhost:3001/fail   # stoppe le primary (process.exit(1))

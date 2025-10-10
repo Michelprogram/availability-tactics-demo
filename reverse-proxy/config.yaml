@@ -1,2 +1,2 @@
-targets: [http://localhost:8022, http://localhost:8023]
-interval: 2
+targets: [http://backend-primary:3001, http://backend-spare:3002]
+health_interval_ms: 2

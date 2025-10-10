@@ -1,4 +1,5 @@
 const express = require('express');
+const os = require('os');
 const app = express();
 
 const PORT = process.env.PORT || 3000;      
@@ -6,7 +7,15 @@ const ROLE = process.env.ROLE || 'primary';  // 'primary' ou 'spare'
 
 
 app.get('/health', (req, res) => {
-  res.status(200).send('OK');
+  const ip = Object.values(os.networkInterfaces())
+    .flat()
+    .find((iface) => iface.family === 'IPv4' && !iface.internal)?.address || 'unknown';
+
+  res.status(200).json({
+    status: 'OK',
+    ip,
+    port: PORT
+  });
 });
 
 

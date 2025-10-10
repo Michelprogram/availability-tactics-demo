@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	Targets  []string `yaml:"targets"`
-	Interval int      `yaml:"interval"`
+	Interval int      `yaml:"health_interval_ms"`
 }
 
 func NewConfig(path string) (*Config, error) {

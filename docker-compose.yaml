@@ -33,3 +33,8 @@ services:
     volumes:
       - ./reverse-proxy/config.yaml:/app/config.yaml
     restart: unless-stopped
+    depends_on:
+      backend-spare:
+        condition: service_healthy
+      backend-primary:
+        condition: service_healthy
