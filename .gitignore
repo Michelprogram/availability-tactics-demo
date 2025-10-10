@@ -6,6 +6,25 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+logs/
+*.log
+
 
 # Fichiers d'environnement
 .env
+.env.*.local
+
+
+# VCS / IDE / OS
+.git
+.gitignore
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Artifacts / cache
+coverage/
+dist/
+build/
+.tmp/
+.cache/

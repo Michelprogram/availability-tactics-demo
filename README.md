@@ -1,14 +1,14 @@
 # ✅ To-Do – Availability PoC
 
 ## Backend (Primary + Backup Services)
-- [ ] Setup repository (`mgl7361-availability-poc`)
-- [ ] Initialize backend (Node.js/Express, Python/Flask, or Java/SpringBoot)
-- [ ] Implement service endpoints:
-  - [ ] `GET /health` → check if service is alive
-  - [ ] `GET /data` → return sample payload
-  - [ ] `POST /fail` → simulate failure (set status = down)
-  - [ ] `POST /recover` → recover service (set status = up)
-- [ ] Dockerfile
+- [x] Setup repository (`availability-tactics-demo`)
+- [x] Initialize backend (Node.js/Express, un seul `server.js` piloté par `ROLE` + `PORT`)
+- [x] Implement service endpoints:
+  - [x] `GET /health` → check if service is alive
+  - [x] `GET /api/data` → return sample payload (message différent selon `primary`/`spare`)
+  - [x] `POST /fail` → simulate **real** failure (`process.exit(1)`)
+  - [ ] `POST /recover` → (facultatif) non requis avec Docker `restart`
+- [x] Dockerfile (image Node 18-alpine, `npm ci --omit=dev`)
 
 ## Reverse Proxy (Failover Manager)
 - [ ] Initialize reverse-proxy (Node.js/Express, Python/Flask, or Java/SpringBoot)
@@ -33,8 +33,8 @@
 - [ ] Dockerfile
 
 ## Deployment
-- [ ] Docker Compose:
-  - [ ] 2 backends (primary + backup)
+- [x] Docker Compose:
+  - [x] 2 backends (primary + backup)  avec `healthcheck`
   - [ ] 1 reverse proxy
   - [ ] 1 frontend
 
@@ -51,3 +51,21 @@
 - [ ] Collect metrics:
   - [ ] Failover time (`T_bascule`)
   - [ ] Error rate during failover (`E_bascule`)
+
+### Run & test (backend)
+```bash
+# Sans Docker
+cd backend
+npm install
+npm run dev:primary   # http://localhost:3001
+npm run dev:spare     # http://localhost:3002
+
+# Avec Docker Compose
+docker compose up --build
+# Primary: http://localhost:3001  | Spare: http://localhost:3002
+
+# Tests
+curl http://localhost:3001/health
+curl http://localhost:3002/health
+curl http://localhost:3001/api/data
+curl -X POST http://localhost:3001/fail   # stoppe le primary (process.exit(1))
