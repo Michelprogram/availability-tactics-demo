@@ -45,6 +45,7 @@ func (s *socketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	select {
+		
 	case <-done:
 	case <-r.Context().Done():
 	}
