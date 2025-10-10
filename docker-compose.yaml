@@ -1,1 +1,24 @@
-#TODO
+services:
+  backend-primary:
+    build: ./backend
+    environment:
+      - ROLE=primary
+      - PORT=3001
+    ports: ["3001:3001"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  backend-spare:
+    build: ./backend
+    environment:
+      - ROLE=spare
+      - PORT=3002
+    ports: ["3002:3002"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
