@@ -54,7 +54,7 @@ func NewProxy(targets []string, logger chan<- string) (*proxy, error) {
 
 func healthCheck(target *url.URL) error {
 	ctx := context.TODO()
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/health/", target), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/health", target), nil)
 	if err != nil {
 		return err
 	}

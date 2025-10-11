@@ -35,7 +35,7 @@
 ## Deployment
 - [x] Docker Compose:
   - [x] 2 backends (primary + backup)  avec `healthcheck`
-  - [ ] 1 reverse proxy
+  - [x] 1 reverse proxy
   - [ ] 1 frontend
 
 ## Deliverables
@@ -52,20 +52,27 @@
   - [ ] Failover time (`T_bascule`)
   - [ ] Error rate during failover (`E_bascule`)
 
-### Run & test (backend)
-```bash
-# Sans Docker
-cd backend
-npm install
-npm run dev:primary   # http://localhost:3001
-npm run dev:spare     # http://localhost:3002
+## Getting Started with Docker Compose
 
-# Avec Docker Compose
-docker compose up --build
-# Primary: http://localhost:3001  | Spare: http://localhost:3002
+  To start the entire project stack using Docker Compose:
 
-# Tests
-curl http://localhost:3001/health
-curl http://localhost:3002/health
-curl http://localhost:3001/api/data
-curl -X POST http://localhost:3001/fail   # stoppe le primary (process.exit(1))
+  ```bash
+  docker compose up --build
+  ```
+
+  This command will:
+  - Build all service images (backend, reverse proxy, and frontend if available)
+  - Start the containers as defined in `docker-compose.yml`
+  - Automatically restart services if they fail (per healthcheck and restart policies)
+
+  To stop and remove containers, networks, and volumes:
+
+  ```bash
+  docker compose down
+  ```
+
+  > **Tip:** Use `docker compose logs -f` to view real-time logs from all services.
+
+## Architecture
+
+![img](documentation/architecture.png)
