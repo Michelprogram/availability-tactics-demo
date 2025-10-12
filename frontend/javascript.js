@@ -97,29 +97,21 @@ async function pollHealth(){
     );
     activeUrl.textContent = lastActiveUrl || "";
 
-    // Update ACTIVE backend status
     if(lastActiveUrl?.includes("backend-primary")){
       setBadge(priState, res.ok ? "UP" : "DOWN", res.ok ? "ok" : "down");
       priCode.textContent = res.status;
       priLat.textContent = ms(dt);
-      
-      // Backup is UNKNOWN (not being monitored)
       setBadge(bakState, "UNKNOWN", "neutral");
       bakCode.textContent = "—";
       bakLat.textContent = "—";
-      
     } else if(lastActiveUrl?.includes("backend-spare")){
       setBadge(bakState, res.ok ? "UP" : "DOWN", res.ok ? "ok" : "down");
       bakCode.textContent = res.status;
       bakLat.textContent = ms(dt);
-      
-      // Primary might be dead, show as DOWN if we know it's failed
-      // For now show UNKNOWN, WebSocket will tell us if it failed
       setBadge(priState, "UNKNOWN", "neutral");
       priCode.textContent = "—";
       priLat.textContent = "—";
     } else {
-      // No active backend known yet
       setBadge(priState, "UNKNOWN", "neutral");
       setBadge(bakState, "UNKNOWN", "neutral");
       priCode.textContent = "—"; priLat.textContent = "—";
@@ -149,77 +141,107 @@ async function doData(){
 }
 
 // ========= Simulation Functions =========
-function simulateFailure() {
-  if (!isFailed) {
-    isFailed = true;
-    toastMsg("Panne simulée - Mode secours activé");
-    addRow({action:"SIMULATION", code:"—", servedBy: "SYSTEM", detail: "Panne primaire simulée - Basculé vers le serveur de secours"});
+// ========= Simulation Functions =========
+async function simulateFailure() {
+  const t0 = performance.now();
+  try{
+    const { run } = withTimeout(null);
+    const res = await run(`${API_BASE}/fail`, { method: "POST" });
+    const dt = Math.max(1, Math.round(performance.now() - t0));
+    addRow({action:"POST /fail", code:res.status, servedBy:(lastActiveUrl||""), latency:dt});
+    toastMsg("Panne déclenchée sur le serveur actif");
     
+    // Toggle buttons
     btnFail.disabled = true;
     btnRecover.disabled = false;
+    isFailed = true;
     
-    // Use actual container names
-    setBadge(activeBadge, "BACKUP", "backup");
-    activeUrl.textContent = "http://backend-spare:3002";
+  }catch(err){
+    const dt = Math.max(1, Math.round(performance.now() - t0));
+    addRow({action:"POST /fail", code:"ERR", latency:dt, detail:String(err?.message || err)});
+    
+    // Still toggle even if error
+    btnFail.disabled = true;
+    btnRecover.disabled = false;
+    isFailed = true;
   }
 }
 
-function simulateRecovery() {
-  if (isFailed) {
-    isFailed = false;
-    toastMsg("Récupération simulée - Retour au serveur primaire");
-    addRow({action:"SIMULATION", code:"—", servedBy: "SYSTEM", detail: "Récupération simulée - Retour au serveur primaire"});
+async function simulateRecovery() {
+  const t0 = performance.now();
+  try{
+    const { run } = withTimeout(null);
+    const res = await run(`${API_BASE}/fail`, { method: "POST" });
+    const dt = Math.max(1, Math.round(performance.now() - t0));
+    addRow({action:"POST /fail", code:res.status, servedBy:(lastActiveUrl||""), latency:dt});
+    toastMsg("Panne déclenchée sur le serveur actif");
     
+    // Toggle buttons back
     btnFail.disabled = false;
     btnRecover.disabled = true;
+    isFailed = false;
     
-    // Use actual container names
-    setBadge(activeBadge, "PRIMARY", "primary");
-    activeUrl.textContent = "http://backend-primary:3001";
+  }catch(err){
+    const dt = Math.max(1, Math.round(performance.now() - t0));
+    addRow({action:"POST /fail", code:"ERR", latency:dt, detail:String(err?.message || err)});
+    
+    // Still toggle even if error
+    btnFail.disabled = false;
+    btnRecover.disabled = true;
+    isFailed = false;
   }
 }
-
 // ========= WebSocket =========
 let ws = null;
 function connectWS(){
   try{
     ws = new WebSocket(WS_URL);
-    ws.onopen = ()=> { wsState.textContent = "connecté"; wsState.style.color = "#16a34a"; };
-    ws.onclose = ()=> { wsState.textContent = "fermé"; wsState.style.color = "#ef4444"; setTimeout(connectWS, 1500); };
-    ws.onerror = ()=> { wsState.textContent = "erreur"; wsState.style.color = "#ef4444"; };
+    ws.onopen = ()=> { 
+      wsState.textContent = "connecté"; 
+      wsState.style.color = "#16a34a"; 
+      console.log("WebSocket: Connected to reverse-proxy");
+    };
+    ws.onclose = ()=> { 
+      wsState.textContent = "fermé"; 
+      wsState.style.color = "#ef4444"; 
+      console.log("WebSocket: Disconnected from reverse-proxy");
+      setTimeout(connectWS, 1500); 
+    };
+    ws.onerror = ()=> { 
+      wsState.textContent = "erreur"; 
+      wsState.style.color = "#ef4444"; 
+      console.error("WebSocket: Connection error");
+    };
 
-ws.onmessage = (ev)=>{
-  const msg = String(ev.data || "");
-  console.log("WebSocket message:", msg);
-  
-  if (msg.startsWith("Proxying request:")) {
-    const match = msg.match(/->\s+(\S+)/);
-    if (match) {
-      lastActiveUrl = match[1];
-      activeUrl.textContent = lastActiveUrl;
+    ws.onmessage = (ev)=>{
+      const msg = String(ev.data || "");
+      console.log("Reverse-Proxy WebSocket:", msg);
       
-      setBadge(activeBadge, 
-        lastActiveUrl.includes("backend-primary") ? "PRIMARY" : "BACKUP",
-        lastActiveUrl.includes("backend-primary") ? "primary" : "backup"
-      );
-    }
-  }
-  
-  if (msg.startsWith("Switching active target to:")){
-    // When switching to backup, mark primary as DOWN
-    if (msg.includes("backend-spare")) {
-      setBadge(priState, "DOWN", "down");
-      priCode.textContent = "—";
-      priLat.textContent = "—";
-    }
-    
-    toastMsg(msg.replace("Switching active target to:", "Bascule →"));
-    addRow({action:"FAILOVER", code:"—", servedBy: lastActiveUrl||"", detail: msg});
-  }
-};
+      if (msg.startsWith("Proxying request:")) {
+        const match = msg.match(/->\s+(\S+)/);
+        if (match) {
+          lastActiveUrl = match[1];
+          activeUrl.textContent = lastActiveUrl;
+          setBadge(activeBadge, 
+            lastActiveUrl.includes("backend-primary") ? "PRIMARY" : "BACKUP",
+            lastActiveUrl.includes("backend-primary") ? "primary" : "backup"
+          );
+        }
+      }
+      if (msg.startsWith("Switching active target to:")){
+        if (msg.includes("backend-spare")) {
+          setBadge(priState, "DOWN", "down");
+          priCode.textContent = "—";
+          priLat.textContent = "—";
+        }
+        toastMsg(msg.replace("Switching active target to:", "Bascule →"));
+        addRow({action:"FAILOVER", code:"—", servedBy: lastActiveUrl||"", detail: msg});
+      }
+    };
   }catch(e){
     wsState.textContent = "échec";
     wsState.style.color = "#ef4444";
+    console.error("WebSocket: Failed to connect", e);
   }
 }
 
@@ -246,25 +268,16 @@ btnData.onclick = doData;
 btnFail.onclick = simulateFailure;
 btnRecover.onclick = simulateRecovery;
 btnAuto.onclick = ()=> (autoTimer ? stopAuto() : startAuto());
-rate.oninput = ()=>{ 
-  rateOut.textContent = `${rate.value} req/s`; 
-  if(autoTimer) startAuto(); 
-};
-btnClear.onclick = ()=>{ 
-  logs.innerHTML = ""; 
-  stats = {ok:0,warn:0,err:0}; 
-  counters.textContent = "—"; 
-};
+rate.oninput = ()=>{ rateOut.textContent = `${rate.value} req/s`; if(autoTimer) startAuto(); };
+btnClear.onclick = ()=>{ logs.innerHTML = ""; stats = {ok:0,warn:0,err:0}; counters.textContent = "—"; };
 
 // ========= Boot =========
 (function boot(){
-  // Initialize button states IMMEDIATELY
   btnRecover.disabled = true;
-  
+  btnFail.disabled = false;
+  isFailed = false;
   pollInfo.textContent = `${POLL_MS/1000}s`;
   rateOut.textContent = `${rate.value} req/s`;
-  
-  // Start everything
   (async function() {
     await detectEndpoints();
     connectWS();
