@@ -1,1 +1,47 @@
-#TODO
+services:
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"  # Map host 3000 to container 80 (nginx)
+    restart: unless-stopped
+
+  backend-primary:
+    build: ./backend
+    environment:
+      - ROLE=primary
+      - PORT=3001
+    ports: ["3001:3001"]
+    restart: on-failure             # redémarre si le process sort avec code ≠ 0
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  backend-spare:
+    build: ./backend
+    environment:
+      - ROLE=spare
+      - PORT=3002
+    ports: ["3002:3002"]
+    restart: unless-stopped  
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  reverse-proxy:
+    build:
+      context: ./reverse-proxy
+    ports:
+      - "8021:8021"
+    volumes:
+      - ./reverse-proxy/config.yaml:/app/config.yaml
+    restart: unless-stopped
+    depends_on:
+      backend-spare:
+        condition: service_healthy
+      backend-primary:
+        condition: service_healthy

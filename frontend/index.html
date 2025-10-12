@@ -1,960 +1,108 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Availability Tactics Monitoring</title>
-    <style>
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            min-height: 100vh;
-            line-height: 1.6;
-        }
-
-        .app {
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .app-header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 2rem;
-            text-align: center;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .app-header h1 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 2.5rem;
-            font-weight: 700;
-        }
-
-        .app-header p {
-            margin: 0.5rem 0 0 0;
-            color: #7f8c8d;
-            font-size: 1.2rem;
-        }
-
-        .connection-status {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            background: #6c757d;
-            color: white;
-        }
-
-        .connection-status.connected {
-            background: #28a745;
-        }
-
-        .connection-status.disconnected {
-            background: #dc3545;
-        }
-
-        .connection-status.checking {
-            background: #ffc107;
-            color: black;
-        }
-
-        /* Side by side layout */
-        .dashboard {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            align-items: start;
-        }
-
-        /* Main content column */
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        /* Sidebar column */
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        .section {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .section h2 {
-            margin-bottom: 1.5rem;
-            color: #2c3e50;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 0.5rem;
-        }
-
-        /* === Pyramid Layout === */
-        .schematic {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3rem;
-            position: relative;
-            padding: 3rem;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            min-height: 500px;
-        }
-
-        .schematic-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4rem;
-        }
-
-        /* Top row: Frontend */
-        .schematic-row.top {
-            margin-bottom: 1rem;
-        }
-
-        /* Middle row: Reverse Proxy */
-        .schematic-row.middle {
-            margin-bottom: 1rem;
-        }
-
-        /* Bottom row: Services */
-        .schematic-row.bottom {
-            gap: 8rem;
-        }
-
-        /* Components */
-        .component {
-            background: white;
-            padding: 1.5rem 2rem;
-            border-radius: 10px;
-            text-align: center;
-            min-width: 160px;
-            border: 3px solid transparent;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 2;
-        }
-
-        .component.active {
-            border-color: #28a745;
-            box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);
-            transform: translateY(-5px);
-        }
-
-        .component.inactive {
-            border-color: #6c757d;
-            opacity: 0.7;
-        }
-
-        .component.down {
-            border-color: #dc3545;
-            background: #f8d7da;
-        }
-
-        .component.unknown {
-            border-color: #ffc107;
-            background: #fff3cd;
-        }
-
-        .service.primary.active {
-            border-color: #007bff;
-            box-shadow: 0 0 20px rgba(0, 123, 255, 0.3);
-        }
-
-        .service.backup.active {
-            border-color: #ffc107;
-            box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
-        }
-
-        .component-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            font-weight: bold;
-        }
-
-        .component h3 {
-            margin-bottom: 1rem;
-            color: #2c3e50;
-            font-size: 1.1rem;
-        }
-
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: white;
-            text-transform: uppercase;
-        }
-
-        .status-up { background: #28a745; }
-        .status-down { background: #dc3545; }
-        .status-unknown { background: #6c757d; }
-        .status-checking { background: #ffc107; color: black; }
-
-        .active-indicator {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background: #28a745;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-5px); }
-            60% { transform: translateY(-3px); }
-        }
-
-        /* Vertical connections */
-        .connection-vertical {
-            width: 4px;
-            height: 80px;
-            background: #28a745;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .connection-vertical::after {
-            content: '▼';
-            position: absolute;
-            bottom: -12px;
-            left: -6px;
-            font-size: 12px;
-            color: #28a745;
-            transition: all 0.3s ease;
-        }
-
-        .connection-vertical.active {
-            background: #28a745;
-            box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
-        }
-
-        .connection-vertical.active::after {
-            color: #28a745;
-        }
-
-        .connection-vertical.inactive {
-            background: #6c757d;
-            opacity: 0.3;
-        }
-
-        .connection-vertical.inactive::after {
-            color: #6c757d;
-            opacity: 0.3;
-        }
-
-        .connection-vertical.down {
-            background: #dc3545;
-        }
-
-        .connection-vertical.down::after {
-            color: #dc3545;
-        }
-
-        .connection-vertical.unknown {
-            background: #ffc107;
-        }
-
-        .connection-vertical.unknown::after {
-            color: #ffc107;
-        }
-
-        .connection-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .connection-label {
-            font-size: 0.8rem;
-            color: #6c757d;
-            margin-top: 0.5rem;
-            text-align: center;
-            font-weight: 500;
-            min-height: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            border: 1px solid #e9ecef;
-        }
-
-        /* === Metrics Grid === */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .metric-card {
-            text-align: center;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .metric-icon { 
-            font-size: 2rem; 
-            margin-bottom: 1rem; 
-            font-weight: bold;
-        }
-        
-        .metric-card h3 { margin-bottom: 1rem; font-size: 1rem; opacity: 0.9; }
-        .metric-value { font-size: 2rem; font-weight: bold; }
-
-        /* === Control Panel === */
-        .control-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 1rem 1.5rem;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-primary { background: #007bff; color: white; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-
-        /* === Logs Section === */
-        .logs-container {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 1rem;
-            background: #f8f9fa;
-        }
-
-        .log-entry {
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            border-left: 4px solid #17a2b8;
-        }
-
-        .log-info { background: #d1ecf1; border-left-color: #17a2b8; }
-        .log-success { background: #d4edda; border-left-color: #28a745; }
-        .log-warning { background: #fff3cd; border-left-color: #ffc107; }
-        .log-error { background: #f8d7da; border-left-color: #dc3545; }
-
-        .log-timestamp {
-            font-weight: bold;
-            margin-right: 1rem;
-            color: #6c757d;
-        }
-
-        .no-logs {
-            text-align: center;
-            color: #6c757d;
-            font-style: italic;
-            padding: 2rem;
-        }
-
-        @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-            
-            .schematic-row.bottom {
-                flex-direction: column;
-                gap: 2rem;
-            }
-            
-            .control-buttons { 
-                grid-template-columns: 1fr; 
-            }
-            
-            .app-header h1 { 
-                font-size: 2rem; 
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Disponibilité – Tableau de bord</title>
+  <meta name="color-scheme" content="light">
+  <link rel="stylesheet" href="body.css" />
 </head>
 <body>
-    <div class="app">
-        <header class="app-header">
-            <h1>Availability Tactics Monitoring</h1>
-            <p>Down Detection & Failover Recovery System</p>
-            <div id="connection-status" class="connection-status checking">Checking services...</div>
-        </header>
-
-        <div class="dashboard">
-            <!-- Left Column: Schematic and Metrics -->
-            <div class="main-content">
-                <!-- Architecture Schematic -->
-                <section class="section">
-                    <h2>System Architecture</h2>
-                    <div class="schematic">
-                        <!-- Top: Frontend -->
-                        <div class="schematic-row top">
-                            <div class="component frontend active">
-                                <div class="component-icon">UI</div>
-                                <h3>Frontend</h3>
-                                <div class="status-badge status-up">Active</div>
-                            </div>
-                        </div>
-
-                        <!-- Connection: Frontend ↓ Proxy -->
-                        <div class="connection-container">
-                            <div class="connection-vertical active" id="conn-frontend-proxy"></div>
-                            <div class="connection-label">HTTP Requests</div>
-                        </div>
-
-                        <!-- Middle: Reverse Proxy -->
-                        <div class="schematic-row middle">
-                            <div class="component proxy unknown" id="service-proxy">
-                                <div class="component-icon">PROXY</div>
-                                <h3>Reverse Proxy</h3>
-                                <div class="status-badge status-unknown" id="status-proxy">CHECKING</div>
-                                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-                                    Active: <strong id="active-service">unknown</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Connection: Proxy ↓ Services -->
-                        <div class="connection-container">
-                            <div class="connection-vertical unknown" id="conn-proxy-services"></div>
-                            <div class="connection-label">Load Balancer</div>
-                        </div>
-
-                        <!-- Bottom: Services -->
-                        <div class="schematic-row bottom">
-                            <!-- Primary Service -->
-                            <div class="component service primary unknown" id="service-primary">
-                                <div class="component-icon">PRI</div>
-                                <h3>Primary</h3>
-                                <div class="status-badge status-unknown" id="status-primary">CHECKING</div>
-                                <div class="active-indicator" style="display: none;">ACTIVE</div>
-                            </div>
-
-                            <!-- Backup Service -->
-                            <div class="component service backup unknown" id="service-backup">
-                                <div class="component-icon">BAK</div>
-                                <h3>Backup</h3>
-                                <div class="status-badge status-unknown" id="status-backup">CHECKING</div>
-                                <div class="active-indicator" style="display: none;">ACTIVE</div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Metrics -->
-                <section class="section">
-                    <h2>System Metrics</h2>
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <div class="metric-icon">TIME</div>
-                            <h3>Failover Time</h3>
-                            <div class="metric-value" id="metric-failover-time">0.00 ms</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon">RATE</div>
-                            <h3>Error Rate</h3>
-                            <div class="metric-value" id="metric-error-rate">0.00%</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon">REQ</div>
-                            <h3>Total Requests</h3>
-                            <div class="metric-value" id="metric-total-requests">0</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon">LAST</div>
-                            <h3>Last Failover</h3>
-                            <div class="metric-value" id="metric-last-failover">Never</div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Right Column: Controls and Logs -->
-            <div class="sidebar">
-                <!-- Control Panel -->
-                <section class="section">
-                    <h2>Control Panel</h2>
-                    <div class="control-buttons">
-                        <button class="btn btn-danger" onclick="simulateFailure()" id="btn-failure" disabled>
-                            Simulate Primary Failure
-                        </button>
-                        <button class="btn btn-success" onclick="simulateRecovery()" id="btn-recovery" disabled>
-                            Recover Primary Service
-                        </button>
-                        <button class="btn btn-primary" onclick="fetchData()" id="btn-fetch" disabled>
-                            Fetch Data from Active Service
-                        </button>
-                        <button class="btn btn-secondary" onclick="clearLogs()">
-                            Clear Logs
-                        </button>
-                    </div>
-                    <div style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: #666;">
-                        Auto-refreshing every 3 seconds...
-                    </div>
-                </section>
-
-                <!-- Logs -->
-                <section class="section">
-                    <h2>System Logs</h2>
-                    <div class="logs-container" id="logs-container">
-                        <div class="no-logs">No logs yet. Checking services...</div>
-                    </div>
-                </section>
-            </div>
-        </div>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-text">Disponibilité – Dashboard</span>
     </div>
+    <div class="env" id="envBadge">INIT…</div>
+  </header>
 
-    <script>
-        // === Global State ===
-        const state = {
-            systemStatus: {
-                primary: 'unknown',
-                backup: 'unknown',
-                proxy: 'unknown',
-                activeService: 'unknown'
-            },
-            metrics: {
-                failoverTime: 0,
-                errorRate: 0,
-                totalRequests: 0,
-                failedRequests: 0,
-                lastFailover: null
-            },
-            logs: [],
-            ws: null,
-            reconnectAttempts: 0,
-            maxReconnectAttempts: 5,
-            healthCheckInterval: null,
-            isChecking: false
-        };
+  <main class="container">
+    <!-- Statuts -->
+    <section class="grid">
+      <article class="card">
+        <h2>Service actif</h2>
+        <div class="active-line">
+          <span id="activeBadge" class="badge neutral">—</span>
+          <span id="activeUrl" class="muted small"></span>
+        </div>
+        <p class="muted small">Déterminé via <code>/health</code> et logs.</p>
+      </article>
 
-        // === Service Health Checking ===
-        async function checkServiceHealth(serviceName, port) {
-            try {
-                const response = await fetch(`http://localhost:${port}/health/`, {
-                    method: 'GET'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    return { status: 'up', data };
-                } else {
-                    return { status: 'down', error: `HTTP ${response.status}` };
-                }
-            } catch (error) {
-                return { status: 'down', error: error.message };
-            }
-        }
+      <article class="card">
+        <h2>Primaire</h2>
+        <div class="kpis">
+          <div><div class="label">État</div><div id="priState" class="badge neutral">—</div></div>
+          <div><div class="label">Code</div><div id="priCode" class="kval">—</div></div>
+          <div><div class="label">Latence</div><div id="priLat" class="kval">—</div></div>
+        </div>
+      </article>
 
-        async function checkProxyHealth() {
-            try {
-                const response = await fetch('http://localhost:8080/data/', {
-                    method: 'GET'
-                });
-                
-                if (response.ok) {
-                    return { status: 'up', data: 'Proxy responding' };
-                } else {
-                    return { status: 'down', error: `HTTP ${response.status}` };
-                }
-            } catch (error) {
-                return { status: 'down', error: error.message };
-            }
-        }
+      <article class="card">
+        <h2>Sauvegarde</h2>
+        <div class="kpis">
+          <div><div class="label">État</div><div id="bakState" class="badge neutral">—</div></div>
+          <div><div class="label">Code</div><div id="bakCode" class="kval">—</div></div>
+          <div><div class="label">Latence</div><div id="bakLat" class="kval">—</div></div>
+        </div>
+      </article>
+    </section>
 
-        async function checkAllServices() {
-            if (state.isChecking) return;
-            
-            state.isChecking = true;
-            updateConnectionStatus('checking');
-            
-            try {
-                // Check primary service (port 8022)
-                const primaryHealth = await checkServiceHealth('primary', '8022');
-                const primaryChanged = state.systemStatus.primary !== primaryHealth.status;
-                state.systemStatus.primary = primaryHealth.status;
-                
-                if (primaryChanged) {
-                    addLog(`Primary service: ${primaryHealth.status.toUpperCase()}`, 
-                           primaryHealth.status === 'up' ? 'success' : 'error');
-                }
-                
-                // Check backup service (port 8023)  
-                const backupHealth = await checkServiceHealth('backup', '8023');
-                const backupChanged = state.systemStatus.backup !== backupHealth.status;
-                state.systemStatus.backup = backupHealth.status;
-                
-                if (backupChanged) {
-                    addLog(`Backup service: ${backupHealth.status.toUpperCase()}`,
-                           backupHealth.status === 'up' ? 'success' : 'error');
-                }
-                
-                // Check proxy
-                const proxyHealth = await checkProxyHealth();
-                const proxyChanged = state.systemStatus.proxy !== proxyHealth.status;
-                state.systemStatus.proxy = proxyHealth.status;
-                
-                if (proxyChanged) {
-                    addLog(`Reverse proxy: ${proxyHealth.status.toUpperCase()}`,
-                           proxyHealth.status === 'up' ? 'success' : 'error');
-                }
-                
-                // Determine active service
-                const previousActive = state.systemStatus.activeService;
-                if (state.systemStatus.primary === 'up') {
-                    state.systemStatus.activeService = 'primary';
-                } else if (state.systemStatus.backup === 'up') {
-                    state.systemStatus.activeService = 'backup';
-                } else {
-                    state.systemStatus.activeService = 'unknown';
-                }
-                
-                // Log failover if active service changed
-                if (previousActive !== state.systemStatus.activeService && previousActive !== 'unknown') {
-                    const failoverTime = Math.random() * 1000 + 500;
-                    state.metrics.failoverTime = failoverTime;
-                    state.metrics.lastFailover = new Date().toLocaleTimeString();
-                    
-                    addLog(`Auto-failover: Switched to ${state.systemStatus.activeService} service (${failoverTime.toFixed(0)}ms)`, 'warning');
-                    updateMetricsUI();
-                }
-                
-                updateUI();
-                updateConnectionStatus(state.systemStatus.proxy === 'up' ? 'connected' : 'disconnected');
-                updateControlButtons();
-                
-            } catch (error) {
-                addLog('Error checking services: ' + error.message, 'error');
-            } finally {
-                state.isChecking = false;
-            }
-        }
+    <!-- Actions -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Actions</h2>
+        <div class="muted small">Sonde santé&nbsp;:<span id="pollInfo">—</span></div>
+      </div>
+      <div class="actions">
+        <div class="row">
+          <button id="btnData" class="btn primary">Envoyer une requête</button>
+          <button id="btnFail" class="btn warn">Simuler panne (actif)</button>
+          <button id="btnRecover" class="btn success">Récupérer (actif)</button>
+        </div>
+        <div class="row">
+          <button id="btnAuto" class="btn">Auto-ping&nbsp;: OFF</button>
+          <label class="range">
+            Débit <input id="rate" type="range" min="1" max="10" value="3" />
+            <output id="rateOut">3 req/s</output>
+          </label>
+        </div>
+      </div>
+    </section>
 
-        // === WebSocket Connection ===
-        function connectWebSocket() {
-            try {
-                if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-                    return;
-                }
-                
-                state.ws = new WebSocket('ws://localhost:8080');
-                
-                state.ws.onopen = () => {
-                    updateConnectionStatus('connected');
-                    addLog('WebSocket connected to reverse proxy', 'success');
-                    state.reconnectAttempts = 0;
-                };
-                
-                state.ws.onmessage = (event) => {
-                    const message = event.data;
-                    handleWebSocketMessage(message);
-                };
-                
-                state.ws.onclose = () => {
-                    updateConnectionStatus('disconnected');
-                    addLog('WebSocket connection closed', 'warning');
-                    attemptReconnect();
-                };
-                
-                state.ws.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    addLog('WebSocket connection error', 'error');
-                };
-                
-            } catch (error) {
-                console.error('WebSocket connection failed:', error);
-                state.systemStatus.proxy = 'down';
-                updateUI();
-            }
-        }
+    <!-- Logs -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Journaux</h2>
+        <div class="legend">
+          <span class="dot ok"></span>200
+          <span class="dot warn"></span>3xx/4xx
+          <span class="dot err"></span>5xx/erreur
+        </div>
+      </div>
+      <div class="logs-toolbar">
+        <div class="muted small" id="counters">—</div>
+        <div class="muted small">WebSocket&nbsp;: <span id="wsState">—</span></div>
+        <button id="btnClear" class="btn ghost small">Effacer</button>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+          <tr>
+            <th>Heure</th><th>Action</th><th>Code</th><th>Servi par</th><th>Latence</th><th>Détails</th>
+          </tr>
+          </thead>
+          <tbody id="logs"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
-        function handleWebSocketMessage(message) {
-            addLog(`Proxy: ${message}`, 'info');
-            
-            if (message.includes('Switching active target to:')) {
-                const target = message.includes('8023') ? 'backup' : 'primary';
-                handleFailover(target);
-            }
-        }
+  <footer class="foot">
+    <span class="muted small">© POC Disponibilité – MGL7361</span>
+    <span id="backendHint" class="muted small"></span>
+  </footer>
 
-        function handleFailover(targetService) {
-            const previousActive = state.systemStatus.activeService;
-            
-            if (previousActive !== targetService && previousActive !== 'unknown') {
-                state.systemStatus.activeService = targetService;
-                
-                const failoverTime = Math.random() * 1000 + 500;
-                state.metrics.failoverTime = failoverTime;
-                state.metrics.lastFailover = new Date().toLocaleTimeString();
-                
-                addLog(`WebSocket failover: Switched to ${targetService} service (${failoverTime.toFixed(0)}ms)`, 'warning');
-                
-                updateUI();
-                updateMetricsUI();
-            }
-        }
-
-        function attemptReconnect() {
-            if (state.reconnectAttempts < state.maxReconnectAttempts) {
-                state.reconnectAttempts++;
-                const delay = Math.min(1000 * state.reconnectAttempts, 10000);
-                
-                addLog(`Reconnecting WebSocket... (${state.reconnectAttempts}/${state.maxReconnectAttempts})`, 'info');
-                
-                setTimeout(() => {
-                    connectWebSocket();
-                }, delay);
-            }
-        }
-
-        // === UI Updates ===
-        function updateUI() {
-            // Update proxy status
-            const proxyElement = document.getElementById('service-proxy');
-            const proxyStatus = document.getElementById('status-proxy');
-            if (proxyElement && proxyStatus) {
-                proxyElement.className = `component proxy ${state.systemStatus.proxy}`;
-                proxyStatus.textContent = state.systemStatus.proxy.toUpperCase();
-                proxyStatus.className = `status-badge status-${state.systemStatus.proxy}`;
-            }
-            
-            // Update active service
-            document.getElementById('active-service').textContent = state.systemStatus.activeService;
-            
-            // Update service status and connections
-            updateServiceUI('primary');
-            updateServiceUI('backup');
-            updateConnections();
-        }
-
-        function updateServiceUI(service) {
-            const isActive = state.systemStatus.activeService === service;
-            const serviceElement = document.getElementById(`service-${service}`);
-            const statusElement = document.getElementById(`status-${service}`);
-            const activeIndicator = serviceElement ? serviceElement.querySelector('.active-indicator') : null;
-            
-            if (serviceElement) {
-                serviceElement.className = `component service ${service} ${state.systemStatus[service]} ${isActive ? 'active' : 'inactive'}`;
-            }
-            
-            if (statusElement) {
-                statusElement.textContent = state.systemStatus[service].toUpperCase();
-                statusElement.className = `status-badge status-${state.systemStatus[service]}`;
-            }
-            
-            if (activeIndicator) {
-                activeIndicator.style.display = isActive ? 'block' : 'none';
-            }
-        }
-
-        function updateConnections() {
-            const frontendProxy = document.getElementById('conn-frontend-proxy');
-            const proxyServices = document.getElementById('conn-proxy-services');
-            
-            // Frontend to Proxy connection
-            if (frontendProxy) {
-                frontendProxy.className = `connection-vertical ${state.systemStatus.proxy === 'up' ? 'active' : state.systemStatus.proxy}`;
-            }
-            
-            // Proxy to Services connection
-            if (proxyServices) {
-                proxyServices.className = `connection-vertical ${state.systemStatus.activeService !== 'unknown' ? 'active' : 'unknown'}`;
-            }
-        }
-
-        function updateConnectionStatus(status) {
-            const element = document.getElementById('connection-status');
-            if (element) {
-                let text = 'Checking...';
-                if (status === 'connected') text = 'Real-time';
-                if (status === 'disconnected') text = 'Disconnected';
-                if (status === 'checking') text = 'Checking...';
-                
-                element.textContent = text;
-                element.className = `connection-status ${status}`;
-            }
-        }
-
-        function updateControlButtons() {
-            const canControl = state.systemStatus.proxy === 'up';
-            document.getElementById('btn-failure').disabled = !canControl;
-            document.getElementById('btn-recovery').disabled = !canControl;
-            document.getElementById('btn-fetch').disabled = !canControl;
-        }
-
-        function updateMetricsUI() {
-            document.getElementById('metric-failover-time').textContent = `${state.metrics.failoverTime.toFixed(2)} ms`;
-            document.getElementById('metric-error-rate').textContent = `${state.metrics.errorRate.toFixed(2)}%`;
-            document.getElementById('metric-total-requests').textContent = state.metrics.totalRequests;
-            document.getElementById('metric-last-failover').textContent = state.metrics.lastFailover || 'Never';
-        }
-
-        // === Logging ===
-        function addLog(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            state.logs.push({ timestamp, message, type });
-            
-            if (state.logs.length > 50) {
-                state.logs.shift();
-            }
-            
-            updateLogsUI();
-        }
-
-        function updateLogsUI() {
-            const container = document.getElementById('logs-container');
-            if (!container) return;
-            
-            if (state.logs.length === 0) {
-                container.innerHTML = '<div class="no-logs">No logs yet. Checking services...</div>';
-                return;
-            }
-            
-            container.innerHTML = state.logs.map(log => `
-                <div class="log-entry log-${log.type}">
-                    <span class="log-timestamp">[${log.timestamp}]</span>
-                    <span class="log-message">${log.message}</span>
-                </div>
-            `).join('');
-            
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function clearLogs() {
-            state.logs = [];
-            updateLogsUI();
-            addLog('Logs cleared', 'info');
-        }
-
-        // === API Calls ===
-        async function simulateFailure() {
-            try {
-                addLog('Manually triggering failure on primary service...', 'warning');
-                const response = await fetch('http://localhost:8080/fail/', { method: 'POST' });
-                if (response.ok) {
-                    addLog('Failure command sent to primary service', 'info');
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                addLog('Error triggering failure: ' + error.message, 'error');
-            }
-        }
-
-        async function simulateRecovery() {
-            try {
-                addLog('Manually triggering recovery on primary service...', 'info');
-                const response = await fetch('http://localhost:8080/recover/', { method: 'POST' });
-                if (response.ok) {
-                    addLog('Recovery command sent to primary service', 'success');
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                addLog('Error triggering recovery: ' + error.message, 'error');
-            }
-        }
-
-        async function fetchData() {
-            try {
-                addLog('Fetching data from active service...', 'info');
-                const response = await fetch('http://localhost:8080/data/');
-                const data = await response.text();
-                addLog(`Data received: ${data.trim()}`, 'success');
-                
-                state.metrics.totalRequests++;
-                updateMetricsUI();
-            } catch (error) {
-                addLog('Error fetching data from service: ' + error.message, 'error');
-                state.metrics.totalRequests++;
-                state.metrics.failedRequests++;
-                state.metrics.errorRate = (state.metrics.failedRequests / state.metrics.totalRequests) * 100;
-                updateMetricsUI();
-            }
-        }
-
-        // === Initialization ===
-        function initialize() {
-            addLog('System initialized - Starting automatic health monitoring...', 'info');
-            
-            // Check services immediately
-            checkAllServices();
-            
-            // Check services every 3 seconds
-            state.healthCheckInterval = setInterval(checkAllServices, 3000);
-            
-            // Try to connect WebSocket
-            connectWebSocket();
-            
-            updateUI();
-            updateMetricsUI();
-            
-            addLog('Automatic monitoring started - checking services every 3 seconds', 'success');
-        }
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', function() {
-            if (state.healthCheckInterval) {
-                clearInterval(state.healthCheckInterval);
-            }
-            if (state.ws) {
-                state.ws.close();
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', initialize);
-    </script>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="javascript.js"></script>
 </body>
 </html>
