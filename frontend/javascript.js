@@ -33,7 +33,6 @@ let WS_URL = null;
 let lastActiveUrl = null;
 let autoTimer = null;
 let stats = {ok:0,warn:0,err:0};
-let isFailed = false;
 
 // ========= Utils =========
 const now = () => new Date().toLocaleTimeString();
@@ -141,7 +140,6 @@ async function doData(){
 }
 
 // ========= Simulation Functions =========
-// ========= Simulation Functions =========
 async function simulateFailure() {
   const t0 = performance.now();
   try{
@@ -151,46 +149,17 @@ async function simulateFailure() {
     addRow({action:"POST /fail", code:res.status, servedBy:(lastActiveUrl||""), latency:dt});
     toastMsg("Panne déclenchée sur le serveur actif");
     
-    // Toggle buttons
-    btnFail.disabled = true;
-    btnRecover.disabled = false;
-    isFailed = true;
+
     
   }catch(err){
     const dt = Math.max(1, Math.round(performance.now() - t0));
     addRow({action:"POST /fail", code:"ERR", latency:dt, detail:String(err?.message || err)});
     
-    // Still toggle even if error
-    btnFail.disabled = true;
-    btnRecover.disabled = false;
-    isFailed = true;
+
   }
 }
 
-async function simulateRecovery() {
-  const t0 = performance.now();
-  try{
-    const { run } = withTimeout(null);
-    const res = await run(`${API_BASE}/fail`, { method: "POST" });
-    const dt = Math.max(1, Math.round(performance.now() - t0));
-    addRow({action:"POST /fail", code:res.status, servedBy:(lastActiveUrl||""), latency:dt});
-    toastMsg("Panne déclenchée sur le serveur actif");
-    
-    // Toggle buttons back
-    btnFail.disabled = false;
-    btnRecover.disabled = true;
-    isFailed = false;
-    
-  }catch(err){
-    const dt = Math.max(1, Math.round(performance.now() - t0));
-    addRow({action:"POST /fail", code:"ERR", latency:dt, detail:String(err?.message || err)});
-    
-    // Still toggle even if error
-    btnFail.disabled = false;
-    btnRecover.disabled = true;
-    isFailed = false;
-  }
-}
+
 // ========= WebSocket =========
 let ws = null;
 function connectWS(){
@@ -266,16 +235,14 @@ function stopAuto(){
 // ========= Wire UI =========
 btnData.onclick = doData;
 btnFail.onclick = simulateFailure;
-btnRecover.onclick = simulateRecovery;
 btnAuto.onclick = ()=> (autoTimer ? stopAuto() : startAuto());
 rate.oninput = ()=>{ rateOut.textContent = `${rate.value} req/s`; if(autoTimer) startAuto(); };
 btnClear.onclick = ()=>{ logs.innerHTML = ""; stats = {ok:0,warn:0,err:0}; counters.textContent = "—"; };
 
 // ========= Boot =========
 (function boot(){
-  btnRecover.disabled = true;
-  btnFail.disabled = false;
-  isFailed = false;
+
+
   pollInfo.textContent = `${POLL_MS/1000}s`;
   rateOut.textContent = `${rate.value} req/s`;
   (async function() {
