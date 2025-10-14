@@ -1,0 +1,94 @@
+:root{
+  --bg:#f7f9fc; --card:#fff; --text:#111827; --muted:#64748b; --border:#e5e7eb;
+  --pri:#2563eb; --ok:#16a34a; --warn:#f59e0b; --err:#ef4444;
+  --shadow: 0 10px 30px rgba(17,24,39,.06);
+}
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif}
+
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#fff;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}
+.brand-dot{width:10px;height:10px;border-radius:999px;background:linear-gradient(90deg,#2563eb,#38bdf8)}
+.brand-text{letter-spacing:.3px}
+.env{font-size:.85rem;color:#0b5; border:1px solid #c7f8e1; background:#ecfdf5; padding:6px 10px; border-radius:999px}
+
+.container{max-width:1100px;margin:24px auto;padding:0 16px;display:flex;flex-direction:column;gap:22px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px}
+.card h2{margin:0 0 12px 0;font-size:1.05rem;color:#0f172a}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+
+.active-line{display:flex;align-items:center;gap:10px}
+.badge{
+  display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;
+  font-weight:700;border:1px solid var(--border);background:#f1f5f9
+}
+.badge.neutral{color:#334155}
+.badge.primary{color:#fff;background:linear-gradient(135deg,#2563eb,#60a5fa);border-color:transparent}
+.badge.backup{color:#fff;background:linear-gradient(135deg,#0891b2,#22d3ee);border-color:transparent}
+.badge.ok{color:#065f46;background:#dcfce7;border-color:#bbf7d0}
+.badge.down{color:#7f1d1d;background:#fee2e2;border-color:#fecaca}
+
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.label{color:var(--muted);font-size:.8rem}
+.kval{font-weight:700}
+
+.actions{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{
+  border:1px solid var(--border);background:#f8fafc;color:#0f172a;padding:10px 14px;border-radius:10px;cursor:pointer;
+  transition:.16s transform, .16s filter; font-weight:600
+}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.btn:active{transform:none}
+.btn.primary{background:linear-gradient(135deg,#2563eb,#60a5fa);border-color:transparent;color:#fff}
+.btn.warn{background:linear-gradient(135deg,#f59e0b,#fbbf24);border-color:transparent;color:#3a2a00}
+.btn.success{background:linear-gradient(135deg,#16a34a,#86efac);border-color:transparent;color:#052e1a}
+.btn.ghost{background:transparent}
+.btn.small{padding:6px 10px;font-weight:500}
+
+.range{display:flex;align-items:center;gap:10px}
+.range input[type="range"]{accent-color:var(--pri)}
+#rateOut{min-width:5ch;display:inline-block;text-align:right}
+
+.logs-toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:6px 0 10px}
+.legend{display:flex;gap:14px;align-items:center;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.err{background:var(--err)}
+
+.table-wrap{overflow:auto;max-height:380px;border:1px solid var(--border);border-radius:12px}
+.table{width:100%;border-collapse:collapse;min-width:760px}
+.table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:center}
+.table thead th{position:sticky;top:0;background:#fff;z-index:1}
+
+.muted{color:var(--muted)} .small{font-size:.85rem}
+.foot{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;color:var(--muted)}
+
+#toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:var(--shadow);display:none}
+#toast.show{display:block;animation:fade .18s ease-out}
+@keyframes fade{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* Button states */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #e5e7eb !important;
+  color: #9ca3af !important;
+}
+
+.btn.primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn.warn {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.btn.success {
+  background-color: #10b981;
+  color: white;
+}
