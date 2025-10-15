@@ -1,78 +1,92 @@
-# ✅ To-Do – Availability PoC
+# Proof of Concept – Tactiques de Disponibilité
 
-## Backend (Primary + Backup Services)
-- [x] Setup repository (`availability-tactics-demo`)
-- [x] Initialize backend (Node.js/Express, un seul `server.js` piloté par `ROLE` + `PORT`)
-- [x] Implement service endpoints:
-  - [x] `GET /health` → check if service is alive
-  - [x] `GET /api/data` → return sample payload (message différent selon `primary`/`spare`)
-  - [x] `POST /fail` → simulate **real** failure (`process.exit(1)`)
-  - [ ] `POST /recover` → (facultatif) non requis avec Docker `restart`
-- [x] Dockerfile (image Node 18-alpine, `npm ci --omit=dev`)
+## Extrait vidéo
 
-## Reverse Proxy (Failover Manager)
-- [x] Initialize reverse-proxy (Node.js/Express, Python/Flask, or Java/SpringBoot)
-- [x] Implement proxy endpoints:
-  - [x] `GET /proxy/health` → check active service
-  - [x] `GET /proxy/data` → forward request to active service
-  - [x] `POST /proxy/fail` → forward fail trigger to primary
-  - [x] `POST /proxy/recover` → forward recover trigger to primary
-- [x] Background job:
-    - [x] Monitor `/health` of primary → auto-switch to backup if down (`setInterval`)
-  - [ ] Log downtime + recovery events
-  - [ ] Optionally collect metrics (failover time + error rate)
-- [x] Dockerfile
+[![Démonstration vidéo]()](https://www.youtube.com/watch?v=vuWMAhkEBoA)
 
-## Front-End (Monitoring UI)
-- [ ] Initialize front-end (any stack: React, Vue, or simple HTML/JS)
-- [ ] Features:
-  - [ ] Logs section (show requests + failures)
-  - [ ] Schema of the architecture (visual diagram)
-  - [ ] Animation when connection switches from primary → backup
-  - [ ] Display metrics (failover time + error rate) (optional)
-- [ ] Dockerfile
 
-## Deployment
-- [x] Docker Compose:
-  - [x] 2 backends (primary + backup)  avec `healthcheck`
-  - [x] 1 reverse proxy
-  - [ ] 1 frontend
+## Objectif
 
-## Deliverables
-- [ ] Architecture document (2–3 pages)
-- [ ] Demo video (3–5 minutes):
-  - [ ] Normal operation
-  - [ ] Trigger failure
-  - [ ] Show detection + failover
-  - [ ] Recovery
-  - [ ] Metrics (if bonus)
+Ce projet démontre deux **tactiques de disponibilité** essentielles dans l’architecture logicielle :
 
-## Bonus
-- [ ] Collect metrics:
-  - [ ] Failover time (`T_bascule`)
-  - [ ] Error rate during failover (`E_bascule`)
+1. **Détection de défaillance** le système identifie automatiquement lorsqu’un service devient inactif.  
+2. **Récupération après panne (redondance)** un service de secours (secondary) prend le relais du service principal (primary).
 
-## Getting Started with Docker Compose
+L’application illustre un système redondant capable de maintenir sa disponibilité malgré une panne simulée.
 
-  To start the entire project stack using Docker Compose:
+---
 
-  ```bash
-  docker compose up --build
-  ```
+## Tactiques mises en œuvre
 
-  This command will:
-  - Build all service images (backend, reverse proxy, and frontend if available)
-  - Start the containers as defined in `docker-compose.yml`
-  - Automatically restart services if they fail (per healthcheck and restart policies)
+### 1. Détection de défaillance
 
-  To stop and remove containers, networks, and volumes:
+Le **reverse proxy** vérifie périodiquement la santé du service principal via l’endpoint `/health`.  
+- Si le service répond (`200 OK`), il reste actif.  
+- En cas d’erreur ou d’absence de réponse, la défaillance est détectée.
 
-  ```bash
-  docker compose down
-  ```
+### 2. Récupération après panne
 
-  > **Tip:** Use `docker compose logs -f` to view real-time logs from all services.
+Lorsqu’une panne est détectée :
+- Le **reverse proxy** bascule automatiquement le trafic vers le **backend de secours**. 
+- Le service principal se rédemarre.
 
-## Architecture
+Cette tactique assure une **tolérance aux pannes** via la **redondance**.
+
+---
+
+## Design de l’application
+
+L’architecture repose sur **quatre conteneurs Docker** interconnectés dans un même réseau virtuel.
+
+### Composants
+
+| Composant | Description | Port | Rôle |
+|------------|--------------|------|------|
+| `backend-primary` | Service principal Node.js (Express) | 3001 | Fournit les données principales |
+| `backend-secondary` | Service de secours (mêmes endpoints) | 3002 | Prend le relais si le principal tombe |
+| `reverse-proxy` | Gestionnaire de bascule (Golan) | 8021 | Détecte la panne, redirige le trafic |
+| `frontend` | Interface utilisateur (HTML/Javascript/CSS) | 3000 | Visualise les états et logs |
+
+### Schéma d’architecture
 
 ![img](documentation/architecture.png)
+
+---
+
+## Endpoints API
+
+### Backend (Primary + Secondary)
+
+| Méthode | Endpoint | Description |
+|----------|-----------|-------------|
+| `GET` | `/health` | Vérifie si le service est actif |
+| `GET` | `/api/data` | Retourne un mock de données |
+| `POST` | `/fail` | Simule une défaillance (exécution `process.exit(1)`) |
+| `POST` | `/recover` | Pensé initialement, mais le système de restart est entièrement géré par Docker |
+
+### Reverse Proxy
+
+| Méthode | Endpoint | Description |
+|----------|-----------|-------------|
+| `GET` | `/proxy/health` | Indique quel service est actuellement actif |
+| `GET` | `/proxy/data` | Redirige vers le service actif |
+| `POST` | `/proxy/fail` | Déclenche une panne du service actif |
+| *(Background job)* | - | Vérifie `/health` du primaire et bascule automatiquement en cas de panne |
+| `Websocket` | `logs` | Websocket qui envoie les logs du reverse proxy pour un meilleur suivi de l'état du réseau |
+
+---
+
+## Exécution du projet en local
+
+Il est obligatoire d'avoir docker sur sa machine.
+
+Pour lancer l'ensemble du projet (a exécuter à la racine du projet):
+
+```bash
+docker compose up --build
+```
+
+Cette commande va:
+- Construire tous les services (backend, reverse proxy, frontend)
+- Démarrer les containers définie dans `docker-compose.yml`
+- Redémarrage automatique des services si ces derniers fail
