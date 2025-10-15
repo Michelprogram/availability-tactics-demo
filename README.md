@@ -14,6 +14,8 @@ Ce projet démontre deux **tactiques de disponibilité** essentielles dans l’a
 
 L’application illustre un système redondant capable de maintenir sa disponibilité malgré une panne simulée.
 
+De plus nous avons ajouté **les parties bonus**, quant'à la latence durant le temps de bascule ainsi que le taux d'erreur pendant la bascule.
+
 ---
 
 ## Tactiques mises en œuvre
